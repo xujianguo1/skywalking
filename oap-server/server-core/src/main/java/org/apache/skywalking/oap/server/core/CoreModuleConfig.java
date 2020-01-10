@@ -38,6 +38,7 @@ public class CoreModuleConfig extends ModuleConfig {
     @Setter private int maxConcurrentCallsPerConnection;
     @Setter private int maxMessageSize;
     @Setter private boolean enableDatabaseSession;
+    @Setter private int topNReportPeriod;
     private final List<String> downsampling;
     /**
      * The period of doing data persistence.
@@ -65,6 +66,11 @@ public class CoreModuleConfig extends ModuleConfig {
     private long maxSizeOfServiceInstanceInventory = 1_000_000L;
     private long maxSizeOfEndpointInventory = 1_000_000L;
     private long maxSizeOfNetworkInventory = 1_000_000L;
+
+    /**
+     * Following are cache setting for none stream(s)
+     */
+    private long maxSizeOfProfileTask = 10_000L;
 
     CoreModuleConfig() {
         this.downsampling = new ArrayList<>();

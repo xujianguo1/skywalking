@@ -33,9 +33,7 @@ import org.apache.skywalking.e2e.service.instance.Instance;
 import org.apache.skywalking.e2e.service.instance.Instances;
 import org.apache.skywalking.e2e.service.instance.InstancesMatcher;
 import org.apache.skywalking.e2e.service.instance.InstancesQuery;
-import org.apache.skywalking.e2e.topo.TopoData;
-import org.apache.skywalking.e2e.topo.TopoMatcher;
-import org.apache.skywalking.e2e.topo.TopoQuery;
+import org.apache.skywalking.e2e.topo.*;
 import org.apache.skywalking.e2e.trace.Trace;
 import org.apache.skywalking.e2e.trace.TracesMatcher;
 import org.apache.skywalking.e2e.trace.TracesQuery;
@@ -59,9 +57,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.skywalking.e2e.metrics.MetricsQuery.ALL_ENDPOINT_METRICS;
-import static org.apache.skywalking.e2e.metrics.MetricsQuery.ALL_INSTANCE_METRICS;
-import static org.apache.skywalking.e2e.metrics.MetricsQuery.ALL_SERVICE_METRICS;
+import static org.apache.skywalking.e2e.metrics.MetricsMatcher.verifyMetrics;
+import static org.apache.skywalking.e2e.metrics.MetricsQuery.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -87,7 +84,7 @@ public class SampleVerificationITCase {
         instrumentedServiceUrl = "http://" + instrumentedServiceHost + ":" + instrumentedServicePort;
     }
 
-    @Test
+    @Test(timeout = 1200000)
     @DirtiesContext
     public void verify() throws Exception {
         final LocalDateTime minutesAgo = LocalDateTime.now(ZoneOffset.UTC);
@@ -140,6 +137,14 @@ public class SampleVerificationITCase {
                 LOGGER.warn(e.getMessage(), e);
             }
         });
+
+        doRetryableVerification(() -> {
+            try{
+                verifyServiceInstanceTopo(minutesAgo);
+            }catch (Exception e) {
+                LOGGER.warn(e.getMessage(), e);
+            }
+        });
     }
 
     private void verifyTopo(LocalDateTime minutesAgo) throws Exception {
@@ -158,6 +163,28 @@ public class SampleVerificationITCase {
 
         final TopoMatcher topoMatcher = new Yaml().loadAs(expectedInputStream, TopoMatcher.class);
         topoMatcher.verify(topoData);
+        verifyServiceRelationMetrics(topoData.getCalls(), minutesAgo);
+    }
+
+    private void verifyServiceInstanceTopo(LocalDateTime minutesAgo) throws Exception {
+        final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+
+        final ServiceInstanceTopoData topoData = queryClient.serviceInstanceTopo(
+                new ServiceInstanceTopoQuery()
+                        .stepByMinute()
+                        .start(minutesAgo.minusDays(1))
+                        .end(now)
+                        .clientServiceId("1")
+                        .serverServiceId("2")
+        );
+        LOGGER.info("instanceTopoData: {}", topoData);
+
+        InputStream expectedInputStream =
+                new ClassPathResource("expected-data/org.apache.skywalking.e2e.SampleVerificationITCase.serviceInstanceTopo.yml").getInputStream();
+
+        final ServiceInstanceTopoMatcher topoMatcher = new Yaml().loadAs(expectedInputStream, ServiceInstanceTopoMatcher.class);
+        topoMatcher.verify(topoData);
+        verifyServiceInstanceRelationMetrics(topoData.getCalls(), minutesAgo);
     }
 
     private void verifyServices(LocalDateTime minutesAgo) throws Exception {
@@ -301,6 +328,35 @@ public class SampleVerificationITCase {
 
         final TracesMatcher tracesMatcher = new Yaml().loadAs(expectedInputStream, TracesMatcher.class);
         tracesMatcher.verify(traces);
+    }
+
+    private void verifyServiceInstanceRelationMetrics(List<Call> calls, final LocalDateTime minutesAgo) throws Exception {
+        verifyRelationMetrics(calls, minutesAgo, ALL_SERVICE_INSTANCE_RELATION_CLIENT_METRICS, ALL_SERVICE_INSTANCE_RELATION_SERVER_METRICS);
+    }
+
+    private void verifyServiceRelationMetrics(List<Call> calls, final LocalDateTime minutesAgo) throws Exception {
+        verifyRelationMetrics(calls, minutesAgo, ALL_SERVICE_RELATION_CLIENT_METRICS, ALL_SERVICE_RELATION_SERVER_METRICS);
+    }
+
+    private void verifyRelationMetrics(List<Call> calls, final LocalDateTime minutesAgo, String[] relationClientMetrics, String[] relationServerMetrics) throws Exception {
+        for (Call call : calls) {
+            for (String detectPoint : call.getDetectPoints()) {
+                switch (detectPoint) {
+                    case "CLIENT": {
+                        for (String metricName : relationClientMetrics) {
+                            verifyMetrics(queryClient, metricName, call.getId(), minutesAgo);
+                        }
+                        break;
+                    }
+                    case "SERVER": {
+                        for (String metricName : relationServerMetrics) {
+                            verifyMetrics(queryClient, metricName, call.getId(), minutesAgo);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     private void doRetryableVerification(Runnable runnable) throws InterruptedException {

@@ -16,15 +16,17 @@
  */
 package org.apache.skywalking.plugin.test.helper;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-
 import com.google.common.base.Strings;
 import org.apache.skywalking.plugin.test.helper.exception.ConfigureFileNotFoundException;
 import org.apache.skywalking.plugin.test.helper.util.StringUtils;
 import org.apache.skywalking.plugin.test.helper.vo.CaseConfiguration;
 import org.yaml.snakeyaml.Yaml;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.Collections;
+import java.util.List;
 
 public class ConfigurationImpl implements IConfiguration {
     private CaseConfiguration configuration;
@@ -97,6 +99,12 @@ public class ConfigurationImpl implements IConfiguration {
         return this.configuration.getStartScript();
     }
 
+    @Override
+    public String catalinaOpts() {
+        List<String> environment = this.configuration.getEnvironment() != null ? this.configuration.getEnvironment() : Collections.emptyList();
+        return environment.stream().filter(it -> it.startsWith("CATALINA_OPTS=")).findFirst().orElse("").replaceAll("^CATALINA_OPTS=", "");
+    }
+
     @Override public String dockerImageName() {
         switch (this.configuration.getType().toLowerCase()) {
         case "tomcat" :
@@ -113,6 +121,10 @@ public class ConfigurationImpl implements IConfiguration {
         return System.getProperty("docker.image.version", "latest");
     }
 
+    @Override
+    public String dockerNetworkName() {
+        return (scenarioName() + "-" + dockerImageVersion()).toLowerCase();
+    }
 
     @Override
     public String dockerContainerName() {

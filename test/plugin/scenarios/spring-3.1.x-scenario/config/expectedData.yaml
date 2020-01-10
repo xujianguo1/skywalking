@@ -20,9 +20,8 @@ registryItems:
     - {spring-3.1.x-scenario: 1}
   operationNames:
     - spring-3.1.x-scenario: ['{DELETE}/delete/{id}', /case/resttemplate, '{GET}/get/{id}',
-                              /spring-3.1.x-scenario/delete/1, '{POST}/create/', /healthCheck, /case/spring3,
-                              /spring-3.1.x-scenario/case/spring3/, /spring-3.1.x-scenario/update/1, '{PUT}/update/{id}',
-                              /spring-3.1.x-scenario/create/, /spring-3.1.x-scenario/get/1]
+                              '{POST}/create/', /healthCheck, /case/spring3,
+                              '{PUT}/update/{id}']
   heartbeat: []
 segmentItems:
   - applicationCode: spring-3.1.x-scenario
@@ -275,6 +274,10 @@ segmentItems:
             tags:
               - {key: url, value: 'http://localhost:8080/spring-3.1.x-scenario/case/resttemplate'}
               - {key: http.method, value: GET}
+              - key: http.params
+                value: |-
+                  q1=[v1]
+                  chinese=[中文]
       - segmentId: not null
         spans:
           - operationName: '{PUT}/update/{id}'

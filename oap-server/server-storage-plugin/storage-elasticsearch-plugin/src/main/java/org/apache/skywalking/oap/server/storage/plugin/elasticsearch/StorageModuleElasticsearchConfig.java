@@ -44,12 +44,14 @@ public class StorageModuleElasticsearchConfig extends ModuleConfig {
     @Setter private int resultWindowMaxSize = 10000;
     @Setter private int metadataQueryMaxSize = 5000;
     @Setter private int segmentQueryMaxSize = 200;
+    @Setter private int profileTaskQueryMaxSize = 200;
     @Setter private int recordDataTTL = 7;
     @Setter private int minuteMetricsDataTTL = 2;
     @Setter private int hourMetricsDataTTL = 2;
     @Setter private int dayMetricsDataTTL = 2;
     private int otherMetricsDataTTL = 0;
     @Setter private int monthMetricsDataTTL = 18;
+    @Setter private String advanced;
 
     public int getMinuteMetricsDataTTL() {
         if (otherMetricsDataTTL > 0) {

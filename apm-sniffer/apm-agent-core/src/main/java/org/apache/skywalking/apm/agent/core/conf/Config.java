@@ -137,6 +137,17 @@ public class Config {
          * How long grpc client will timeout in sending data to upstream.
          */
         public static int GRPC_UPSTREAM_TIMEOUT = 30;
+        /**
+         * Get profile task list interval
+         */
+        public static int GET_PROFILE_TASK_INTERVAL = 20;
+    }
+
+    public static class Profile {
+        /**
+         * If true, skywalking agent will enable profile when user create a new profile task. Otherwise disable profile.
+         */
+        public static boolean ACTIVE = true;
     }
 
     public static class Jvm {
@@ -168,7 +179,8 @@ public class Config {
         public static String FILE_NAME = "skywalking-api.log";
 
         /**
-         * Log files directory. Default is blank string, means, use "system.out" to output logs.
+         * Log files directory. Default is blank string, means, use "{theSkywalkingAgentJarDir}/logs  " to output logs. 
+         * {theSkywalkingAgentJarDir} is the directory where the skywalking agent jar file is located.
          *
          * Ref to {@link WriterFactory#getLogWriter()}
          */
@@ -251,12 +263,26 @@ public class Config {
             public static Map<String, Object> CONTEXT = new HashMap<String, Object>();
         }
 
+        public static class Tomcat {
+            /**
+             * This config item controls that whether the Tomcat plugin should
+             * collect the parameters of the request.
+             */
+            public static boolean COLLECT_HTTP_PARAMS = false;
+        }
+
         public static class SpringMVC {
             /**
              * If true, the fully qualified method name will be used as the endpoint name instead of the request URL,
              * default is false.
              */
             public static boolean USE_QUALIFIED_NAME_AS_ENDPOINT_NAME = false;
+
+            /**
+             * This config item controls that whether the SpringMVC plugin should
+             * collect the parameters of the request.
+             */
+            public static boolean COLLECT_HTTP_PARAMS = false;
         }
 
         public static class Toolkit {
@@ -316,11 +342,14 @@ public class Config {
          */
         public static class OPGroup {
             /**
-             * Rules for RestTemplate plugin
+             * Since 6.6.0, exit span is not requesting endpoint register,
+             * this group rule is not required.
+             *
+             * Keep this commented, just as a reminder that, it will be reused in a RPC server side plugin.
              */
-            public static class RestTemplate implements OPGroupDefinition {
-                public static Map<String, String> RULE = new HashMap<String, String>();
-            }
+//            public static class RestTemplate implements OPGroupDefinition {
+//                public static Map<String, String> RULE = new HashMap<String, String>();
+//            }
         }
 
         public static class Light4J {
@@ -337,6 +366,27 @@ public class Config {
              * If true, the transaction definition name will be simplified
              */
             public static boolean SIMPLIFY_TRANSACTION_DEFINITION_NAME = false;
+        }
+
+        public static class JdkThreading {
+
+            /**
+             * Threading classes ({@link java.lang.Runnable} and {@link java.util.concurrent.Callable}
+             * and their subclasses, including anonymous inner classes)
+             * whose name matches any one of the {@code THREADING_CLASS_PREFIXES} (splitted by ,)
+             * will be instrumented
+             */
+            public static String THREADING_CLASS_PREFIXES = "";
+        }
+
+        public static class Http {
+            /**
+             * When either {@link Tomcat#COLLECT_HTTP_PARAMS} or {@link SpringMVC#COLLECT_HTTP_PARAMS}
+             * is enabled, how many characters to keep and send to the OAP backend,
+             * use negative values to keep and send the complete parameters,
+             * NB. this config item is added for the sake of performance
+             */
+            public static int HTTP_PARAMS_LENGTH_THRESHOLD = 1024;
         }
     }
 }

@@ -38,11 +38,15 @@ public interface IConfiguration {
 
     String startScript();
 
+    String catalinaOpts();
+
     String entryService();
 
     String dockerImageName();
 
     String dockerContainerName();
+
+    String dockerNetworkName();
 
     String dockerImageVersion();
 
